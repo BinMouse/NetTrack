@@ -21,8 +21,6 @@ using json = nlohmann::json;
 
 DWORD WINAPI ShowSettingsWindow(LPVOID);
 
-
-
 void to_json(json& j, const PacketInfo& p) {
     j = json{
         {"count", p.count},
@@ -34,9 +32,7 @@ void to_json(json& j, const PacketInfo& p) {
     };
 }
 
-/// <summary>
-/// Логирование данных о пакете
-/// </summary>
+// Логирование данных о пакете
 PacketInfo LogPacketInfo(PVOID packet, UINT packetLen) {
     PWINDIVERT_IPHDR ipHdr = nullptr;
     PWINDIVERT_IPV6HDR ipv6Hdr = nullptr;
@@ -162,10 +158,10 @@ PacketInfo LogPacketInfo(PVOID packet, UINT packetLen) {
     return pInfo;
 }
 
-/// <summary>
-/// Добавление пакета в массив без дубликатов
-/// </summary>
-void writePacketInfoToLog(PacketInfo packet, PacketInfo* FlowLog, size_t& logCount) {
+
+// Добавление пакета в массив без дубликатов
+void writePacketInfoToLog(PacketInfo packet, std::vector<PacketInfo> FlowLog, size_t& logCount) {
+    
     // Проверяем, есть ли уже такой пакет
     for (size_t i = 0; i < logCount; ++i) {
         if (FlowLog[i] == packet) {
@@ -174,6 +170,7 @@ void writePacketInfoToLog(PacketInfo packet, PacketInfo* FlowLog, size_t& logCou
         }
     }
 
+	// Если нет, добавляем новый пакет
     if (logCount < MAX_PACKETS) {
         FlowLog[logCount] = packet;
         FlowLog[logCount].count = 1;
@@ -194,17 +191,17 @@ void PrintLastError(const char* msg) {
 }
 
 
-/// <summary>
-/// Сохранение лога в файл log.json
-/// </summary>
-void LogOutput(PacketInfo* FlowLog, size_t logCount, AnalyzerChain& analyzerChain) {
+// Сохранение лога в файл log.json
+void LogOutput(std::vector<PacketInfo> packets, size_t logCount, AnalyzerChain& analyzerChain) {
     if (logCount == 0) return;
 
-    std::vector<PacketInfo> packets(FlowLog, FlowLog + logCount);
+    //std::vector<PacketInfo> packets(FlowLog, FlowLog + logCount);
+
+	//std::vector<PacketInfo> packets(FlowLog.begin(), FlowLog.begin() + logCount);
 
     nlohmann::json logJSON = nlohmann::json::array();
-    for (const auto& p : packets) {
-        logJSON.push_back(p);
+    for (int i = 0; i < logCount; i++) {
+        logJSON.push_back(packets[i]);
     }
 
     nlohmann::json reportJSON = analyzerChain.runAll(packets);
@@ -246,7 +243,8 @@ int main() {
 
     CreateThread(nullptr, 0, ShowSettingsWindow, nullptr, 0, nullptr);
 
-    PacketInfo* FlowLog = new PacketInfo[MAX_PACKETS];
+    std::vector<PacketInfo> FlowLog(MAX_PACKETS);
+    //PacketInfo* FlowLog = new PacketInfo[MAX_PACKETS];
     size_t logCount = 0;
 
     HANDLE handle = WinDivertOpen("true", WINDIVERT_LAYER_NETWORK, 0, 0);
@@ -279,7 +277,9 @@ int main() {
             lastSaveTime = now;
         }
     }
+
     WinDivertClose(handle);
-    delete[] FlowLog;
+	FlowLog.clear();
+    //delete[] FlowLog;
     return 0;
 }

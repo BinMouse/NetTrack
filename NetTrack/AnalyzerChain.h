@@ -11,5 +11,5 @@ private:
 public:
     void addAnalyzer(std::unique_ptr<IAnalyzer> analyzer);
 
-    nlohmann::json runAll(const std::vector<PacketInfo>& packets);
+    nlohmann::json runAll(const std::vector<PacketInfo> packets);
 };

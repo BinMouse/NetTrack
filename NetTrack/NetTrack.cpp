@@ -200,35 +200,43 @@ void PrintLastError(const char* msg) {
 /// <summary>
 /// Сохранение лога в файл log.json
 /// </summary>
-void LogOutput(PacketInfo* FlowLog, size_t logCount) {
+void LogOutput(PacketInfo* FlowLog, size_t logCount, AnalyzerChain& analyzerChain) {
     if (logCount == 0) return;
 
-    json logJSON = json::array();
-    for (size_t i = 0; i < logCount; ++i) {
-        logJSON.push_back(FlowLog[i]);
+    // 1. Преобразуем FlowLog в std::vector для удобства
+    std::vector<PacketInfo> packets(FlowLog, FlowLog + logCount);
+
+    // 2. JSON лог пакетов
+    nlohmann::json logJSON = nlohmann::json::array();
+    for (const auto& p : packets) {
+        logJSON.push_back(p);
     }
 
-    // Получаем текущее время
+    // 3. Генерируем отчёт анализаторов
+    nlohmann::json reportJSON = analyzerChain.runAll(packets);
+
+    // 4. Собираем всё в один объект
+    nlohmann::json finalJSON;
+    finalJSON["log"] = logJSON;
+    finalJSON["report"] = reportJSON;
+
+    // 5. Формируем имя файла по дате и времени
     SYSTEMTIME st;
     GetLocalTime(&st);
 
-    // Формируем имя файла: ГГГГММДДЧЧММСС.json
     wchar_t filename[128];
     swprintf(filename, 128, L"%04d%02d%02d%02d%02d%02d.json",
         st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 
-    // Формируем полный путь: g_settings.logPath + filename
     std::filesystem::path fullPath = std::filesystem::path(g_settings.logPath) / filename;
-
-    // Создаём каталог, если его нет
     std::filesystem::create_directories(g_settings.logPath);
 
-    // Сохраняем JSON
+    // 6. Сохраняем JSON
     std::ofstream oFile(fullPath, std::ios::out | std::ios::trunc);
     if (oFile.is_open()) {
-        oFile << logJSON.dump(1);
+        oFile << finalJSON.dump(1); // красивый вывод с отступами
         oFile.close();
-        std::wcout << L"[+] Log saved to " << fullPath.wstring() << L"\n";
+        std::wcout << L"[+] Log and report saved to " << fullPath.wstring() << L"\n";
     }
     else {
         std::wcerr << L"[!] Failed to save log to " << fullPath.wstring() << L"\n";
@@ -271,13 +279,14 @@ int main() {
 
         DWORD64 now = GetTickCount64();
         if (now - lastSaveTime >= g_settings.saveIntervalMinutes * 60 * 1000 || logCount == MAX_PACKETS) {
-            LogOutput(FlowLog, logCount);
+            AnalyzerChain analyzerChain;
+            analyzerChain.addAnalyzer(std::make_unique<ConnectionCountAnalyzer>());
+
+            LogOutput(FlowLog, logCount, analyzerChain);
             logCount = 0;
             lastSaveTime = now;
         }
     }
-
-    LogOutput(FlowLog, logCount);
     WinDivertClose(handle);
     delete[] FlowLog;
     return 0;

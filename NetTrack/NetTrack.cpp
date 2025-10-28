@@ -203,24 +203,19 @@ void PrintLastError(const char* msg) {
 void LogOutput(PacketInfo* FlowLog, size_t logCount, AnalyzerChain& analyzerChain) {
     if (logCount == 0) return;
 
-    // 1. Преобразуем FlowLog в std::vector для удобства
     std::vector<PacketInfo> packets(FlowLog, FlowLog + logCount);
 
-    // 2. JSON лог пакетов
     nlohmann::json logJSON = nlohmann::json::array();
     for (const auto& p : packets) {
         logJSON.push_back(p);
     }
 
-    // 3. Генерируем отчёт анализаторов
     nlohmann::json reportJSON = analyzerChain.runAll(packets);
 
-    // 4. Собираем всё в один объект
     nlohmann::json finalJSON;
     finalJSON["log"] = logJSON;
     finalJSON["report"] = reportJSON;
 
-    // 5. Формируем имя файла по дате и времени
     SYSTEMTIME st;
     GetLocalTime(&st);
 
@@ -231,10 +226,9 @@ void LogOutput(PacketInfo* FlowLog, size_t logCount, AnalyzerChain& analyzerChai
     std::filesystem::path fullPath = std::filesystem::path(g_settings.logPath) / filename;
     std::filesystem::create_directories(g_settings.logPath);
 
-    // 6. Сохраняем JSON
     std::ofstream oFile(fullPath, std::ios::out | std::ios::trunc);
     if (oFile.is_open()) {
-        oFile << finalJSON.dump(1); // красивый вывод с отступами
+        oFile << finalJSON.dump(1);
         oFile.close();
         std::wcout << L"[+] Log and report saved to " << fullPath.wstring() << L"\n";
     }
@@ -248,6 +242,10 @@ int main() {
     char packet[BUFSIZE];
     UINT packetLen = 0;
     WINDIVERT_ADDRESS addr;
+
+	// Инициализация анализаторов
+    AnalyzerChain analyzerChain;
+    analyzerChain.addAnalyzer(std::make_unique<ConnectionCountAnalyzer>());
 
     CreateThread(nullptr, 0, ShowSettingsWindow, nullptr, 0, nullptr);
 
@@ -279,9 +277,6 @@ int main() {
 
         DWORD64 now = GetTickCount64();
         if (now - lastSaveTime >= g_settings.saveIntervalMinutes * 60 * 1000 || logCount == MAX_PACKETS) {
-            AnalyzerChain analyzerChain;
-            analyzerChain.addAnalyzer(std::make_unique<ConnectionCountAnalyzer>());
-
             LogOutput(FlowLog, logCount, analyzerChain);
             logCount = 0;
             lastSaveTime = now;

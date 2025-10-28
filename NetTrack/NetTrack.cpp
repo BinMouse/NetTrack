@@ -181,10 +181,7 @@ void writePacketInfoToLog(PacketInfo packet, PacketInfo* FlowLog, size_t& logCou
     }
 }
 
-/// <summary>
-/// Вывод ошибки WinDivert в консоль
-/// </summary>
-/// <param name="msg"></param>
+// Вывод ошибки WinDivert в консоль
 void PrintLastError(const char* msg) {
     DWORD err = GetLastError();
     LPSTR buf = nullptr;

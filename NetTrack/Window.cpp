@@ -12,8 +12,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     switch (uMsg) {
     case WM_CREATE:
     {
-        // Путь для логов
-        CreateWindowW(L"STATIC", L"Путь для логов:",
+        // Log path
+        CreateWindowW(L"STATIC", L"Log path:",
             WS_VISIBLE | WS_CHILD, 20, 20, 150, 20,
             hwnd, nullptr, nullptr, nullptr);
 
@@ -22,8 +22,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             180, 20, 250, 25,
             hwnd, (HMENU)ID_EDIT_PATH, nullptr, nullptr);
 
-        // Адрес сервера
-        CreateWindowW(L"STATIC", L"Адрес сервера:",
+        // Server address
+        CreateWindowW(L"STATIC", L"Server address:",
             WS_VISIBLE | WS_CHILD, 20, 60, 150, 20,
             hwnd, nullptr, nullptr, nullptr);
 
@@ -32,8 +32,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             180, 60, 250, 25,
             hwnd, (HMENU)ID_EDIT_SERVER, nullptr, nullptr);
 
-        // Токен
-        CreateWindowW(L"STATIC", L"Токен:",
+        // Token
+        CreateWindowW(L"STATIC", L"Token:",
             WS_VISIBLE | WS_CHILD, 20, 100, 150, 20,
             hwnd, nullptr, nullptr, nullptr);
 
@@ -42,23 +42,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             180, 100, 250, 25,
             hwnd, (HMENU)ID_EDIT_TOKEN, nullptr, nullptr);
 
-        // Интервал сохранения
+        // Save interval
         HWND combo = CreateWindowW(L"COMBOBOX", L"",
             CBS_DROPDOWNLIST | WS_VISIBLE | WS_CHILD | WS_VSCROLL,
             180, 140, 150, 120,
             hwnd, (HMENU)ID_COMBO_INTERVAL, nullptr, nullptr);
 
-        SendMessageW(combo, CB_ADDSTRING, 0, (LPARAM)L"1 минута");
-        SendMessageW(combo, CB_ADDSTRING, 0, (LPARAM)L"5 минут");
-        SendMessageW(combo, CB_ADDSTRING, 0, (LPARAM)L"10 минут");
+        SendMessageW(combo, CB_ADDSTRING, 0, (LPARAM)L"1 minute");
+        SendMessageW(combo, CB_ADDSTRING, 0, (LPARAM)L"5 minutes");
+        SendMessageW(combo, CB_ADDSTRING, 0, (LPARAM)L"10 minutes");
 
-        // По умолчанию выбрать значение из g_settings
+        // Default selection from g_settings
         int selIndex = (g_settings.saveIntervalMinutes == 1 ? 0 :
             g_settings.saveIntervalMinutes == 5 ? 1 : 2);
         SendMessageW(combo, CB_SETCURSEL, selIndex, 0);
 
-        // Кнопка "Сохранить настройки"
-        CreateWindowW(L"BUTTON", L"Сохранить настройки",
+        // Save settings button
+        CreateWindowW(L"BUTTON", L"Save settings",
             WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
             150, 200, 180, 35,
             hwnd, (HMENU)ID_BUTTON_SAVE, nullptr, nullptr);
@@ -80,13 +80,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             int sel = SendMessageW(GetDlgItem(hwnd, ID_COMBO_INTERVAL), CB_GETCURSEL, 0, 0);
             g_settings.saveIntervalMinutes = (sel == 0 ? 1 : sel == 1 ? 5 : 10);
 
-            std::wstring msg = L"Путь: " + g_settings.logPath +
-                L"\nСервер: " + g_settings.server +
-                L"\nТокен: " + g_settings.token +
-                L"\nИнтервал: " + (sel == 0 ? L"1 минута" :
-                    sel == 1 ? L"5 минут" : L"10 минут");
+            std::wstring msg = L"Log path: " + g_settings.logPath +
+                L"\nServer: " + g_settings.server +
+                L"\nToken: " + g_settings.token +
+                L"\nInterval: " + (sel == 0 ? L"1 minute" :
+                    sel == 1 ? L"5 minutes" : L"10 minutes");
 
-            MessageBoxW(hwnd, msg.c_str(), L"Настройки сохранены", MB_OK | MB_ICONINFORMATION);
+            MessageBoxW(hwnd, msg.c_str(), L"Settings saved", MB_OK | MB_ICONINFORMATION);
         }
         break;
     }
@@ -108,7 +108,7 @@ DWORD WINAPI ShowSettingsWindow(LPVOID) {
     RegisterClassW(&wc);
 
     HWND hwnd = CreateWindowExW(
-        0, CLASS_NAME, L"Настройки",
+        0, CLASS_NAME, L"Settings",
         WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME,
         CW_USEDEFAULT, CW_USEDEFAULT, 480, 300,
         nullptr, nullptr, GetModuleHandle(nullptr), nullptr

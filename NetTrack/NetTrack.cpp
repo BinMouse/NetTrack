@@ -40,13 +40,15 @@ PacketInfo LogPacketInfo(PVOID packet, UINT packetLen) {
     UINT8 protocol = 0;
     PWINDIVERT_TCPHDR tcpHdr = nullptr;
     PWINDIVERT_UDPHDR udpHdr = nullptr;
-    PWINDIVERT_ICMPHDR IcmpHdr = nullptr;
-    PWINDIVERT_ICMPV6HDR Icmpv6Hdr = nullptr;
+    PWINDIVERT_ICMPHDR icmpHdr = nullptr;
+    PWINDIVERT_ICMPV6HDR icmpv6Hdr = nullptr;
     PVOID payload = nullptr;
     UINT payloadLen = 0;
 
     PacketInfo pInfo;
     pInfo.protocol = "unknown";
+    pInfo.srcIp = "";
+    pInfo.dstIp = "";
     pInfo.srcPort = 0;
     pInfo.dstPort = 0;
     pInfo.payloadLen = 0;
@@ -57,8 +59,8 @@ PacketInfo LogPacketInfo(PVOID packet, UINT packetLen) {
         &ipHdr,
         &ipv6Hdr,
         &protocol,
-        &IcmpHdr,
-        &Icmpv6Hdr,
+        &icmpHdr,
+        &icmpv6Hdr,
         &tcpHdr,
         &udpHdr,
         &payload,
@@ -72,12 +74,8 @@ PacketInfo LogPacketInfo(PVOID packet, UINT packetLen) {
         return pInfo;
     }
 
-    std::cerr << "\n----------------\n";
-
-    // IPv4
+    // Определяем IP
     if (ipHdr) {
-        pInfo.protocol = "IPv4";
-
         char srcStr[16], dstStr[16];
         snprintf(srcStr, sizeof(srcStr), "%u.%u.%u.%u",
             ipHdr->SrcAddr & 0xFF,
@@ -92,72 +90,43 @@ PacketInfo LogPacketInfo(PVOID packet, UINT packetLen) {
 
         pInfo.srcIp = srcStr;
         pInfo.dstIp = dstStr;
-
-        std::cerr << "IPv4: " << srcStr << " -> " << dstStr << "\n";
     }
-
-    // IPv6
     else if (ipv6Hdr) {
-        pInfo.protocol = "IPv6";
-
-        char srcStr[INET6_ADDRSTRLEN] = { 0 };
-        char dstStr[INET6_ADDRSTRLEN] = { 0 };
-
-        IN6_ADDR in6_src;
-        IN6_ADDR in6_dst;
-
+        char srcStr[INET6_ADDRSTRLEN] = {0};
+        char dstStr[INET6_ADDRSTRLEN] = {0};
+        IN6_ADDR in6_src, in6_dst;
         memcpy(&in6_src.u.Byte, ipv6Hdr->SrcAddr, 16);
         memcpy(&in6_dst.u.Byte, ipv6Hdr->DstAddr, 16);
 
-        if (!InetNtopA(AF_INET6, &in6_src, srcStr, INET6_ADDRSTRLEN)) {
+        if (!InetNtopA(AF_INET6, &in6_src, srcStr, INET6_ADDRSTRLEN))
             strcpy_s(srcStr, "InvalidIPv6");
-        }
-        if (!InetNtopA(AF_INET6, &in6_dst, dstStr, INET6_ADDRSTRLEN)) {
+        if (!InetNtopA(AF_INET6, &in6_dst, dstStr, INET6_ADDRSTRLEN))
             strcpy_s(dstStr, "InvalidIPv6");
-        }
 
         pInfo.srcIp = srcStr;
         pInfo.dstIp = dstStr;
-
-        std::cerr << "IPv6: " << srcStr << " -> " << dstStr << "\n";
     }
 
-    // TCP
+    // Определяем протокол и порты
     if (tcpHdr) {
         pInfo.protocol = "TCP";
         pInfo.srcPort = ntohs(tcpHdr->SrcPort);
         pInfo.dstPort = ntohs(tcpHdr->DstPort);
         pInfo.payloadLen = payloadLen;
-
-        std::cerr << "TCP srcPort=" << pInfo.srcPort
-            << " dstPort=" << pInfo.dstPort
-            << " payloadLen=" << payloadLen << "\n";
     }
-
-    // UDP
     else if (udpHdr) {
         pInfo.protocol = "UDP";
         pInfo.srcPort = ntohs(udpHdr->SrcPort);
         pInfo.dstPort = ntohs(udpHdr->DstPort);
         pInfo.payloadLen = payloadLen;
-
-        std::cerr << "UDP srcPort=" << pInfo.srcPort
-            << " dstPort=" << pInfo.dstPort
-            << " payloadLen=" << payloadLen << "\n";
     }
-
-    // ICMP / ICMPv6
-    else if (IcmpHdr || Icmpv6Hdr) {
-        pInfo.protocol = IcmpHdr ? "ICMP" : "ICMPv6";
-        std::cerr << pInfo.protocol << " packet detected\n";
+    else if (icmpHdr || icmpv6Hdr) {
+        pInfo.protocol = icmpHdr ? "ICMP" : "ICMPv6";
     }
-
-    // Если ничего не определено
-    if (pInfo.protocol == "unknown")
-        std::cerr << "[!] Unknown packet type.\n";
 
     return pInfo;
 }
+
 
 
 // Добавление пакета в массив без дубликатов
@@ -262,6 +231,11 @@ int main() {
         }
 
         PacketInfo p = LogPacketInfo(packet, packetLen);
+        std::cerr << p.protocol
+            << " " << p.srcIp << ":" << p.srcPort
+            << " -> " << p.dstIp << ":" << p.dstPort
+            << " payloadLen=" << p.payloadLen
+            << "\n";
         writePacketInfoToLog(p, FlowLog, logCount);
 
         if (!WinDivertSend(handle, packet, packetLen, NULL, &addr)) {

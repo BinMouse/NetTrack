@@ -135,6 +135,7 @@
     <ClCompile Include="ConnectionCountAnalyzer.cpp" />
     <ClCompile Include="NetTrack.cpp" />
     <ClCompile Include="PacketInfo.cpp" />
+    <ClCompile Include="PortScanningAnalyzer.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -143,6 +144,7 @@
     <ClInclude Include="ConnectionCountAnalyzer.h" />
     <ClInclude Include="IAnalyzer.hpp" />
     <ClInclude Include="PacketInfo.h" />
+    <ClInclude Include="PortScanningAnalyzer.h" />
     <ClInclude Include="Settings.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

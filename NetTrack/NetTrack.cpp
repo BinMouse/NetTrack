@@ -14,6 +14,7 @@
 #include "PacketInfo.h"
 #include "AnalyzerChain.h"
 #include "ConnectionCountAnalyzer.h"
+#include "PortScanningAnalyzer.h"
 
 using json = nlohmann::json;
 
@@ -160,7 +161,7 @@ PacketInfo LogPacketInfo(PVOID packet, UINT packetLen) {
 
 
 // Добавление пакета в массив без дубликатов
-void writePacketInfoToLog(PacketInfo packet, std::vector<PacketInfo> FlowLog, size_t& logCount) {
+void writePacketInfoToLog(PacketInfo packet,PacketInfo* FlowLog, size_t& logCount) {
     
     // Проверяем, есть ли уже такой пакет
     for (size_t i = 0; i < logCount; ++i) {
@@ -192,16 +193,14 @@ void PrintLastError(const char* msg) {
 
 
 // Сохранение лога в файл log.json
-void LogOutput(std::vector<PacketInfo> packets, size_t logCount, AnalyzerChain& analyzerChain) {
+void LogOutput(PacketInfo* FlowLog, size_t logCount, AnalyzerChain& analyzerChain) {
     if (logCount == 0) return;
 
-    //std::vector<PacketInfo> packets(FlowLog, FlowLog + logCount);
-
-	//std::vector<PacketInfo> packets(FlowLog.begin(), FlowLog.begin() + logCount);
+    std::vector<PacketInfo> packets(FlowLog, FlowLog + logCount);
 
     nlohmann::json logJSON = nlohmann::json::array();
-    for (int i = 0; i < logCount; i++) {
-        logJSON.push_back(packets[i]);
+    for (const auto& p : packets) {
+        logJSON.push_back(p);
     }
 
     nlohmann::json reportJSON = analyzerChain.runAll(packets);
@@ -240,11 +239,11 @@ int main() {
 	// Инициализация анализаторов
     AnalyzerChain analyzerChain;
     analyzerChain.addAnalyzer(std::make_unique<ConnectionCountAnalyzer>());
+    analyzerChain.addAnalyzer(std::make_unique<PortScanningAnalyzer>());
 
     CreateThread(nullptr, 0, ShowSettingsWindow, nullptr, 0, nullptr);
 
-    std::vector<PacketInfo> FlowLog(MAX_PACKETS);
-    //PacketInfo* FlowLog = new PacketInfo[MAX_PACKETS];
+    PacketInfo* FlowLog = new PacketInfo[MAX_PACKETS];
     size_t logCount = 0;
 
     HANDLE handle = WinDivertOpen("true", WINDIVERT_LAYER_NETWORK, 0, 0);
@@ -279,7 +278,6 @@ int main() {
     }
 
     WinDivertClose(handle);
-	FlowLog.clear();
-    //delete[] FlowLog;
+    delete[] FlowLog;
     return 0;
 }

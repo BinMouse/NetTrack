@@ -1,5 +1,6 @@
 #include "ConnectionCountAnalyzer.h"
 nlohmann::json ConnectionCountAnalyzer::analyze(const std::vector<PacketInfo>& packets) {
+    int threshold = 100;
     nlohmann::json result;
     result["rule"] = "connCnt";
 
@@ -7,8 +8,7 @@ nlohmann::json ConnectionCountAnalyzer::analyze(const std::vector<PacketInfo>& p
 
     std::map<std::string, int> connCount;
     for (const auto& p : packets) {
-        //connCount[p.srcIp]++;
-        if (p.count > 10) {
+        if (p.count > threshold) {
             suspiciousIps.insert(p.srcIp + "->" + p.dstIp);
         }
     }

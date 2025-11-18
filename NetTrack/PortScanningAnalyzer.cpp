@@ -34,9 +34,7 @@ std::vector<ScanResult> PortScanningAnalyzer::detectPortScanning(const std::vect
     std::unordered_map<std::string, std::unordered_map<std::string, std::set<int>>> portsMap;
 
     for (const auto& p : packets) {
-        if (p.protocol == "TCP" || p.protocol == "UDP") {
-            portsMap[p.srcIp][p.dstIp].insert(p.dstPort);
-        }
+        portsMap[p.srcIp][p.dstIp].insert(p.dstPort);
     }
 
     std::vector<ScanResult> results;

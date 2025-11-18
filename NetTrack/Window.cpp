@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <string>
 #include "Settings.h"
+#include "Logger.h"
 
 #define ID_EDIT_PATH      101
 #define ID_EDIT_SERVER    102
@@ -86,13 +87,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 L"\nInterval: " + (sel == 0 ? L"1 minute" :
                     sel == 1 ? L"5 minutes" : L"10 minutes");
 
+            Logger::getInstance().log("Settings updated");
             MessageBoxW(hwnd, msg.c_str(), L"Settings saved", MB_OK | MB_ICONINFORMATION);
         }
         break;
     }
     case WM_DESTROY:
         PostQuitMessage(0);
-        return 0;
+        exit(0);
     }
     return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }

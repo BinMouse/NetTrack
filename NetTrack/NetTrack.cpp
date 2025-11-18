@@ -4,12 +4,14 @@
 #include <ws2tcpip.h>
 #include <winsock2.h>
 #include <windows.h>
+#include <shellapi.h>
 #include <string.h>
 #include <filesystem>
 #include <list>
 #include <thread>
 #include "windivert.h"
 
+#include "Logger.h"
 #include "Settings.h"
 #include "PacketInfo.h"
 #include "AnalyzerChain.h"
@@ -21,6 +23,14 @@ using json = nlohmann::json;
 #define MAX_PACKETS 50000
 
 DWORD WINAPI ShowSettingsWindow(LPVOID);
+
+void HideConsole() {
+    ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+}
+
+void ShowConsole() {
+    ::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+}
 
 void to_json(json& j, const PacketInfo& p) {
     j = json{
@@ -70,7 +80,6 @@ PacketInfo LogPacketInfo(PVOID packet, UINT packetLen) {
     );
 
     if (!parsed) {
-        std::cerr << "[!] Failed to parse packet.\n";
         return pInfo;
     }
 
@@ -149,16 +158,27 @@ void writePacketInfoToLog(PacketInfo packet,PacketInfo* FlowLog, size_t& logCoun
 }
 
 // Вывод ошибки WinDivert в консоль
+
 void PrintLastError(const char* msg) {
     DWORD err = GetLastError();
     LPSTR buf = nullptr;
+
     FormatMessageA(
         FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
         NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPSTR)&buf, 0, NULL);
-    std::cerr << msg << " (GetLastError=" << err << "): " << (buf ? buf : "Unknown") << std::endl;
-    if (buf) LocalFree(buf);
+        (LPSTR)&buf, 0, NULL
+    );
+
+    std::string errorMsg = msg;
+    errorMsg += " (GetLastError=" + std::to_string(err) + "): ";
+    errorMsg += (buf ? buf : "Unknown");
+
+    Logger::getInstance().log(errorMsg);
+
+    delete buf;
+    buf = nullptr;
 }
+
 
 
 // Сохранение лога в файл log.json
@@ -192,10 +212,11 @@ void LogOutput(PacketInfo* FlowLog, size_t logCount, AnalyzerChain& analyzerChai
     if (oFile.is_open()) {
         oFile << finalJSON.dump(1);
         oFile.close();
-        std::wcout << L"[+] Log and report saved to " << fullPath.wstring() << L"\n";
+
+        Logger::getInstance().log("Log and report saved to " + fullPath.string() + "\n");
     }
     else {
-        std::wcerr << L"[!] Failed to save log to " << fullPath.wstring() << L"\n";
+        Logger::getInstance().log("Failed to save log to " + fullPath.string() + "\n");
     }
 }
 
@@ -205,10 +226,15 @@ int main() {
     UINT packetLen = 0;
     WINDIVERT_ADDRESS addr;
 
+    Logger::getInstance().log("NetTrack has been started.");
+
+    HideConsole();
+
 	// Инициализация анализаторов
     AnalyzerChain analyzerChain;
     analyzerChain.addAnalyzer(std::make_unique<ConnectionCountAnalyzer>());
     analyzerChain.addAnalyzer(std::make_unique<PortScanningAnalyzer>());
+    Logger::getInstance().log("Analyzers initialyzed.");
 
     CreateThread(nullptr, 0, ShowSettingsWindow, nullptr, 0, nullptr);
 
@@ -220,7 +246,7 @@ int main() {
         PrintLastError("WinDivertOpen failed");
         return 1;
     }
-    std::cerr << "WinDivert opened. Ready to capture packets. Press Ctrl-C to stop.\n";
+
 
     DWORD64 lastSaveTime = GetTickCount64();
 
@@ -231,11 +257,11 @@ int main() {
         }
 
         PacketInfo p = LogPacketInfo(packet, packetLen);
-        std::cerr << p.protocol
-            << " " << p.srcIp << ":" << p.srcPort
-            << " -> " << p.dstIp << ":" << p.dstPort
-            << " payloadLen=" << p.payloadLen
-            << "\n";
+        //std::cerr << p.protocol
+        //    << " " << p.srcIp << ":" << p.srcPort
+        //    << " -> " << p.dstIp << ":" << p.dstPort
+        //    << " payloadLen=" << p.payloadLen
+        //    << "\n";
         writePacketInfoToLog(p, FlowLog, logCount);
 
         if (!WinDivertSend(handle, packet, packetLen, NULL, &addr)) {

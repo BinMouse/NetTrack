@@ -149,6 +149,7 @@
     <ClInclude Include="PacketHandler.h" />
     <ClInclude Include="PacketInfo.h" />
     <ClInclude Include="PortScanningAnalyzer.h" />
+    <ClInclude Include="Report.hpp" />
     <ClInclude Include="Settings.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

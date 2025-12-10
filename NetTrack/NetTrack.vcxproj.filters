@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Исходные файлы\Анализаторы">
+      <UniqueIdentifier>{ccd943c2-2261-4bce-8b1a-9b99315cf4ca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NetTrack.cpp">
@@ -27,20 +30,20 @@
     <ClCompile Include="PacketInfo.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="ConnectionCountAnalyzer.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="AnalyzerChain.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="PortScanningAnalyzer.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="PacketHandler.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp">
       <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="AnalyzerChain.cpp">
+      <Filter>Исходные файлы\Анализаторы</Filter>
+    </ClCompile>
+    <ClCompile Include="PortScanningAnalyzer.cpp">
+      <Filter>Исходные файлы\Анализаторы</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectionCountAnalyzer.cpp">
+      <Filter>Исходные файлы\Анализаторы</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +70,9 @@
     </ClInclude>
     <ClInclude Include="Logger.h">
       <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Report.hpp">
+      <Filter>Исходные файлы\Анализаторы</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

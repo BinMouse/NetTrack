@@ -1,10 +1,11 @@
 #include "PortScanningAnalyzer.h"
-#include "PortScanningAnalyzer.h"
+#include "Report.hpp"
 #include <nlohmann/json.hpp>
 
 nlohmann::json PortScanningAnalyzer::analyze(const std::vector<PacketInfo>& packets) {
-    nlohmann::json result;
-    result["rule"] = "portScan";
+    Report result("portScan");
+    //nlohmann::json result;
+    //result["rule"] = "portScan";
 
     const int threshold = 100;
 
@@ -26,7 +27,7 @@ nlohmann::json PortScanningAnalyzer::analyze(const std::vector<PacketInfo>& pack
     result["suspicious_ips"] = suspiciousIps;
     result["threshold"] = threshold;
 
-    return result;
+    return result.getJson();
 }
 
 

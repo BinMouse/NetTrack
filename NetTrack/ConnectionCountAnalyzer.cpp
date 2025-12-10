@@ -1,8 +1,10 @@
 #include "ConnectionCountAnalyzer.h"
+#include "Report.hpp"
 nlohmann::json ConnectionCountAnalyzer::analyze(const std::vector<PacketInfo>& packets) {
     int threshold = 100;
-    nlohmann::json result;
-    result["rule"] = "connCnt";
+    Report result("connCount");
+    //nlohmann::json result;
+    //result["rule"] = "connCount";
 
     std::set<std::string> suspiciousIps;
 
@@ -21,5 +23,5 @@ nlohmann::json ConnectionCountAnalyzer::analyze(const std::vector<PacketInfo>& p
     if (suspiciousIps.empty())
         result["suspicious"] = nlohmann::json::array();
 
-    return result;
+    return result.getJson();
 }
